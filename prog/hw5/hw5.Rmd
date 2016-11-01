@@ -1,0 +1,113 @@
+---
+title: "MATH 5800 Financial Programming/Modeling"
+subtitle: Homework 5
+author: Wenjie Wang, Hao Li, and Catherine Payzant
+date: "`r format(Sys.time(), '%d %B %Y')`"
+header-includes:
+    - \usepackage{bm}
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: no
+    number_sections: no
+    toc: no
+  fontsize: 11pt
+  classoption: letter
+  documentclass: article
+
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+## function ipak: install and load multiple R packages.
+## check to see if packages are installed.
+## install them if they are not, then attach them to the search path.
+ipak <- function (pkg) {
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg))
+        install.packages(new.pkg, dependencies = TRUE)
+    sapply(pkg, require, character.only = TRUE, quietly = TRUE)
+    invisible(NULL)
+}
+
+## install packages needed
+needpack <- c("quadprog")
+ipak(needpack)
+## knitr::opts_chunk$set(comment = ">")
+## load data and clean
+
+## source code
+
+```
+
+
+## Question 1. Tangency Portfolio and Efficient Frontier
+
+For tangency portfolio, the weight vector that maximizes the target function are
+$$
+\bm{w}_0 = \arg \max_{\bm{w}} \frac{\bm{\mu}^T\bm{w} -
+r_f} {\sqrt{\bm{w}^T\bm{\Sigma}\bm{w}}},~ \text{s.t.}~ \bm{w}^T\bm{1} = 1.
+$$
+We first want to show that the maximization problem can be rewritten into a
+quadratic programming problem.
+Note that $\bm{\mu}^T \bm{w}_0 - r_f = \bm{\mu}^T \bm{w}_0 - r_f \bm{1}^T\bm{w}_0$
+since $\bm{1}^T\bm{w}_0 = \bm{w}_0^T\bm{1} = 1$.
+Then the maximum of target function can be rewritten as
+$$
+\frac{(\bm{\mu} - r_f \bm{1})^T \bm{w}_0}{\sqrt{\bm{w}_0^T\bm{\Sigma}\bm{w}_0}}
+= \frac{(\bm{\mu} - r_f \bm{1})^T \bm{w}_k}{\sqrt{\bm{w}_k\bm{\Sigma}\bm{w}_k}},
+$$
+where $\bm{w}_k = k \bm{w}_0$, for some $k > 0$.
+The maximum of target function does not depend on the choice of $k$, which means
+that we may find any $\bm{w}_k$ that maximizes the target function and further
+re-scale them to satisfy the constraint that $\bm{w}^T\bm{1} = 1$.
+
+The maximization problem on finding $\bm{w}_k$ is equivalent to the
+following quadratic problem,
+$$
+\min_{\bm{w}} \bm{w}^T\bm{\Sigma}\bm{w},~
+\text{s.t.}~ (\bm{\mu} - r_f \bm{1})^T \bm{w} = c_0,
+$$
+where $c_0$ is an arbitrary positive constant.
+
+Therefore, the original maximization problem is equivalent to the quadratic
+programming problem of finding one of $\bm{w}_k$, and re-scaling from $\bm{w}_k$
+to $\bm{w}_0$.
+
+As the efficient frontier, the naive constructing method is by getting the
+minimal variance portfolios subject to different target returns.
+
+Alternatively, it can be shown that any minimum variance portfolio can be
+represented as a convex combination of any two minimum variance portfolios with
+different target expected returns. If the expected return of the resulting
+portfolio is greater than the expected of the global minimum variance portfolio,
+then the portfolio is an efficient frontier portfolio. (Otherwise, it is not.)
+Therefore, we can also get the efficient frontier based on the global minimum
+variance portfolio and tangency portfolio, both of which are known to be
+efficient.
+
+
+## Question 2.
+The trade-off portfolio gives a trade-off between return and risk. The weight
+$\lambda$ is called risk-aversion parameter. Maximizing the trade-off portfolio
+can be re-written as
+$$
+\min \lambda\bm{w}^T\bm{\Sigma}\bm{w} - \bm{\mu}^T\bm{w} ,~
+\text{s.t.}~ \bm{w}^T\bm{1} = 1.
+$$
+The efficient frontier is produced using exactly the same quadratic program
+while $\lambda$ ranges.  For any specific $\lambda$, the trade-off portfolio
+falls on the efficient frontier.
+
+## Question 3.
+The minimization of $Var(r_p - \bm{r}'\bm{w}_{bm})$ is any portfolio solving the
+following quadratic program:
+$$
+\min \bm{w}^T\bm{\Sigma}\bm{w} -
+2\mathrm{Cov}(\bm{r}',\bm{r}'\bm{w}_{bm})\bm{w},~
+\text{s.t.}~ \bm{w}^T\bm{1} = 1.
+$$
+The benchmark portfolio is chosen from efficient frontier. From the plot, we can
+see the tracking portfolio compared to the benchmark portfolio may give a
+smaller risk as well as a smaller return. Apparently, if the lower bound
+$\bm{w}_{min}$ and upper bound $\bm{w}_{max}$ include $\bm{w}_{bm}$, the
+tracking portfolio is the benchmark portfolio.
