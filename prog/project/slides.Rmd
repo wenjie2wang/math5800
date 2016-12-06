@@ -1,0 +1,382 @@
+---
+title: "Backtesting and Comparing the Performance of Typical Portfolios"
+subtitle: "MATH 5800 --- Course Project"
+author: Wenjie Wang, Hao Li, and Catherine Payzant
+date: "`r format(Sys.time(), '%d %B %Y')`"
+header-includes:
+    - \usepackage{bm}
+    - \widowpenalties 1 150
+bibliography: project_group01.bib
+output:
+    beamer_presentation:
+        theme: "Singapore"
+        toc: true
+        fig_width: 7
+        fig_height: 4
+        fig_caption: true
+        slide_level: 2
+        keep_tex: false
+---
+
+
+```{r setup, echo = FALSE, warning = FALSE, message = FALSE}
+## function ipak: install and load multiple R packages.
+## check to see if packages are installed.
+## install them if they are not, then attach them to the search path.
+ipak <- function (pkg) {
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg))
+        install.packages(new.pkg, repos = "https://cloud.r-project.org")
+    sapply(pkg, require, character.only = TRUE, quietly = TRUE)
+    invisible(0L)
+}
+
+## install packages needed
+needpack <- c("knitr", "kfigr", "quadprog")
+ipak(needpack)
+
+## get output format
+outFormat <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+
+## source code
+
+## temp function to set up index for figures and tables
+noPrint <- function(lab) invisible(lab)
+
+## test
+fn = local({
+  i = 0
+  function(x) {
+      i <<- i + 1
+      if ("html" %in% outFormat) {
+          return(paste('Figure ', i, ': ', x, sep = ''))
+      }
+      as.character(x)
+  }
+})
+
+```
+
+`r noPrint(figr("efficient", TRUE, FALSE, type = "Figure"))`
+`r noPrint(figr("fig:MVWC", TRUE, FALSE, type = "Figure"))`
+`r noPrint(figr("fig:minVar", TRUE, FALSE, type = "Figure"))`
+`r noPrint(figr("fig:tangency", TRUE, FALSE, type = "Figure"))`
+
+
+# Introduction
+
+## Modern portfolio theory
+
+- Objective: Use algorithms to determine weights of assets so the
+  expected return is maximized given a certain level of risk.
+- Quantopian was used to evaluate the results.
+
+
+## Notations
+
+- Consider an $N$ assets' portfolio problem where $N$ is a finite
+  positive integer.
+- Rate of return on asset $i$: $r_i$, $(i=1,2,\ldots,N)$.
+- Mean $\mu_i$ and standard deviation $\sigma_i$.
+- $\text{Cov}(r_i, r_j) = \sigma^2_{ij}$ for all $i \ne j$.
+- Weights $\mathbf{w} = (w_1, w_2, \ldots, w_N)^T$.
+- Expected return is then $\mu = \mathbf{r}^T\mathbf{w}$ and
+  corresponding risk is
+  $\sigma=\sqrt{\mathbf{w}^T\bm{\Sigma}\mathbf{w}}$, where
+  $\mathbf{r}=(r_1, r_2, \ldots, r_N)^T$, and
+  $\bm{\Sigma}=(\sigma^2_{ij})$.
+
+
+# Typical Portfolios
+
+## Global Minimum Variance Portfolio
+
+
+- The global minimum variance (GMV) portfolio aims to minimize the overall risk
+globally.
+- A quadratic optimization problem:
+$$
+\min_{\mathbf{w}} \mathbf{w}^T\bm{\Sigma}\mathbf{w},
+~\text{s.t.}~\mathbf{w}^T\mathbf{1} = 1,
+$$
+where the only constraint is that the summation of the weights of assets in the
+portfolio is one.
+
+- The GMV portfolio is designed to minimize overall risk.
+
+- In reality, investors usually tend to take more risk for possibly more returns.
+
+## Mean-Variance Portfolio
+
+- The basic GMV portfolio can be easily extended by imposing extra constraints
+on the objective function.
+
+- Compared with GMV, the extra constraint that mean-variance portfolio
+has is: $$\mathbf{w}^T \mathbf{r} - K_0 \ge 0,$$
+where $\mathbf{r} = (r_1, r_2, \ldots, s_N)$ and $K_0$ is a
+specified constant.
+
+- A quadratic optimization problem:
+$$
+\min_{\mathbf{w}} \mathbf{w}^T\bm{\Sigma}\mathbf{w},
+~\text{s.t.}~\mathbf{w}^T\mathbf{1} = 1, \mathbf{w}^T \mathbf{r} \ge K_0
+$$
+
+## Tangency Portfolio
+
+- The tangency portfolio aims to maximize the ratio of excess return
+($\mathbf{r}^T\mathbf{w} - r_f$) to portfolio violatility and represents a
+trade-off between return and risk.
+
+- The maximization problem can be written as:
+$$
+\arg \max_{\mathbf{w}} \frac{\mathbf{r}^T\mathbf{w} - r_f}
+{\sqrt{\mathbf{w}^T\bm{\Sigma}\mathbf{w}}},~ \text{s.t.}~
+\mathbf{w}^T\mathbf{1} = 1.
+$$
+
+- Rewrite it into a quadratic programming problem:
+$$
+\min_{\mathbf{w}} \mathbf{w}^T\bm{\Sigma}\mathbf{w},~
+\text{s.t.}~ (\mathbf{r} - r_f \mathbf{1})^T \mathbf{w} = c_0,
+$$
+where $c_0$ is an arbitrary positive constant and $r_f$ is risk-free rate.
+
+- Thus, the original
+maximization problem is equivalent to the quadratic programming problem of
+finding one weight vector $\mathbf{w}_k$, and scaling
+$\mathbf{w}_k$ to $\mathbf{w}_0$ so that $\mathbf{w}^T_0\mathbf{1} = 1$.
+
+## Efficient Frontier
+
+- Following the framework originally developed by @markowitz1952, portfolios
+maximizing expected return under certain given level of risk or equivalently
+minimizing risk subject to a target expected return is defined as efficient
+portfolios. The efficient frontier consists of all efficient portfolios.
+
+    - The naive constructing method of efficient frontier is by obtaining the
+      mean variance portfolios subject to different target returns.
+      Alternatively, it can be shown that any minimum variance portfolio can
+      be represented as a convex combination of any two minimum variance
+      portfolios with different target expected returns.
+
+    - If the expected return of the resulting portfolio is greater than the
+      expected return of the global minimum variance portfolio, then the
+      portfolio is an efficient frontier portfolio.
+
+    - We can also get the efficient frontier based on the global minimum
+      variance portfolio and tangency portfolio, both of which are known to
+      be efficient.
+
+## Simulation
+
+- 20 assets.
+
+- Each asset had 60 simulated rate of returns from normal distribution
+with mean 0.005 and standard deviation 0.015.
+
+- No specific correlation was imposed on these assets.
+
+---
+
+```{r efficient, echo = FALSE, fig.width = 6.5, fig.height = 3.5, fig.cap = fn("Sample efficient frontier."), fig.align = "center"}
+## Tangency Portfolio ----------------------------------------------
+## sample setting
+na <- 20L                               # number of assets
+ns <- 60L                               # number of observations
+set.seed(1216)                          # important for reproducibility
+retn <- matrix(rnorm(ns * na, mean = 0.005, sd = 0.015), nrow = ns)
+mu <- colMeans(retn)                    # expected returns
+rf <- 0.0001                            # riskfree rate (about 2.5% pa)
+mu2 <- mu - rf                          # excess means
+Q <- cov(retn)                          # covariance matrix
+
+## obtain the optimized weights by quadratic programming
+res_tan <- solve.QP(Dmat = Q, dvec = rep(0, na), Amat = matrix(mu2, ncol = 1),
+                    bvec = 1, meq  = 1L)
+w_tan <- prop.table(res_tan$solution)
+retn_tan <- crossprod(w_tan, mu)
+se_tan <- as.vector(sqrt(crossprod(w_tan, Q %*% w_tan))) # standard error
+sr <- crossprod(w_tan, mu2) / se_tan  # compute sharpe ratio
+
+## minimal variance portfolio
+res_min <- solve.QP(Dmat = 2 * Q, dvec = rep(0, na),
+                    Amat = matrix(1, nrow = na, ncol = 1),
+                    bvec = 1, meq = 1L)
+w_min <- res_min$solution
+retn_min <- crossprod(w_min, mu)
+se_min <- sqrt(as.vector(crossprod(w_min, Q %*% w_min)))
+
+## mean-variance
+eps <- 0.007
+res_meanVar <- solve.QP(Dmat = 2 * Q, dvec = rep(0, na),
+                        Amat = cbind(matrix(1, nrow = na, ncol = 1), mu),
+                        bvec = c(1, eps), meq = 1L)
+w_meanVar <- res_meanVar$solution
+retn_meanVar <- crossprod(w_meanVar, mu)
+se_meanVar <- sqrt(as.vector(crossprod(w_meanVar, Q %*% w_meanVar)))
+
+## minimum variance with constrain
+## eps <- 0.48
+## w0 <- mu / sqrt(diag(Q))
+## res_const <- solve.QP(Dmat = 2 * Q, dvec = rep(0, na),
+##                       Amat = cbind(matrix(1, nrow = na, ncol = 1), w0),
+##                       bvec = c(1, eps), meq = 1L)
+## w_const <- res_const$solution
+## retn_const <- crossprod(w_const, mu)
+## se_const <- sqrt(as.vector(crossprod(w_const, Q %*% w_const)))
+
+## construct efficient frontier from minimal variance and tangency portfolio
+retnVec <- c(retn_min, retn_tan)
+seVec <- c(se_min, se_tan)
+varMat <- diag(seVec ^ 2)
+varMat[1, 2] <- varMat[2, 1] <- as.vector(crossprod(w_min, Q %*% w_tan))
+alpha <- seq(from = 1, to = - 1, by = - 0.1)
+nAlpha <- length(alpha)
+tmpMat <- cbind(alpha, 1 - alpha)
+retn_eff <- tmpMat %*% retnVec
+var_eff <- sapply(alpha, function(a) {
+    crossprod(c(a, 1 - a), varMat %*% c(a, 1 - a))
+})
+
+## hue function
+gg_color_hue <- function(n) {
+    hues <- seq(15, 375, length = n + 1)
+    grDevices::hcl(h = hues, l = 65, c = 100)[seq_len(n)]
+}
+colVec <- gg_color_hue(3)
+
+## plot the tangency and minimal variace portfolio, on efficient portfolio
+par(mar = c(2.5, 2.5, 0, 0), mgp = c(1.5, 0.5, 0)) # remove margin
+plot(sqrt(var_eff), retn_eff, type = "l",
+     xlab = expression(sigma[p]), ylab = expression(r[p]))
+points(se_min, retn_min, col = colVec[1], pch = 20, cex = 1.5)
+points(se_meanVar, retn_meanVar, col = colVec[2], pch = 20, cex = 1.5)
+points(se_tan, retn_tan, col = colVec[3], pch = 20, cex = 1.5)
+abline(b = (retn_tan - rf) / se_tan, a = rf, lty = 2, col = "gray", lwd = 1.5)
+legend("bottomright", col = c("black", "gray", colVec),
+       pch = c(NA, NA, rep(20, 3)), lty = c(1, 2, rep(NA, 3)),
+       lwd = c(1, 1.5, rep(NA, 3)), cex = 0.85,
+       legend = c("Efficient Frontier", "Captial Market Line (CML)",
+                  "Global Minimum Variance", "Mean-Variance", "Tangency"))
+
+```
+
+
+# Backtesting
+
+## Setup
+
+- The sample stocks: *AAPL* (Apple Inc.), *AMZN* (Amazon Inc.),
+  *GOOG* (Alphabet Inc.), and *FB* (Facebook Inc.).
+
+- The weight of each stock was allocated at 10:30 AM on every market day.
+
+- The trade was made weekly at 10:30 AM on the first day when the market
+  opens in that week.
+
+- For each asset, the trading weight was its average weight from last five
+  daily allocations.
+
+- The initial capital was set to be 10,000 USD. The time period for the
+  backtesting was from 2014/06/01 to 2016/11/01.
+
+- The only difference was the determination of weights of assets in the
+  portfolio as discussed.
+
+
+---
+
+
+```{r fig:minVar, echo = FALSE, results = "asis", fig.align = "center"}
+src_tag <- "figs/globalMinVar.png"
+caption <- "Backtesting results of the global minimum variance portfolio."
+lab_num <- figr("fig:minVar", TRUE, FALSE, type = "Figure")
+caption_tag <- paste0(lab_num, ": ", caption)
+
+if ("html" %in% outFormat) {
+    cat(paste("<div class='figure' style='text-align: center'>",
+              "<img src=", src_tag,
+              "alt=", caption_tag, "/>",
+              "<p class='caption'>", caption_tag, "</p></div>"))
+} else {
+    cat("![", caption, "][fig:globalMinVar]", sep = "")
+}
+```
+
+---
+
+
+```{r fig:meanVar, echo = FALSE, results = "asis", fig.align = "center"}
+src_tag <- "figs/meanVariance.png"
+caption <- "Backtesting results of the mean-variance portfolio."
+lab_num <- figr("fig:meanVar", TRUE, FALSE, type = "Figure")
+caption_tag <- paste0(lab_num, ": ", caption)
+
+if ("html" %in% outFormat) {
+    cat(paste("<div class='figure' style='text-align: center'>",
+              "<img src=", src_tag,
+              "alt=", caption_tag, "/>",
+              "<p class='caption'>", caption_tag, "</p></div>"))
+} else {
+    cat("![", caption, "][fig:meanVar]", sep = "")
+}
+```
+
+---
+
+
+```{r fig:tangency, echo = FALSE, results = "asis"}
+src_tag <- "figs/tangency.png"
+caption <- "Backtesting results of tangency portfolio."
+lab_num <- figr("fig:tangency", TRUE, FALSE, type = "Figure")
+caption_tag <- paste0(lab_num, ": ", caption)
+
+if ("html" %in% outFormat) {
+    cat(paste("<div class='figure' style='text-align: center'>",
+              "<img src=", src_tag,
+              "alt=", caption_tag, "/>",
+              "<p class='caption'>", caption_tag, "</p></div>"))
+} else {
+    cat("![", caption, "][fig:tangency]", sep = "")
+}
+```
+
+# Summary
+
+## Summary
+
+- In summary, we reviewed the global minimum variance portfolio,
+  mean-variance portfolio, and tangency portfolio learned from this course,
+  and further compared their performance by back-testing in Quantopian.
+
+- All of these portfolios outperformed the benchmark algorithm from
+  Quantopian, though the performance of one certain portfolio is subject to
+  the selection of stocks, follow-up time period, etc.
+
+- The source document for this slide as well as the **Python** scripts used
+  for backtesting in Quantopian are available at our GitHub repository
+  named [math5800][github].
+
+
+# Acknowledgment
+
+## Acknowledgment
+
+The completion of the project wouldn't be possible without the great effort
+that our lovely team members have taken. It gave us much pleasure working
+together as a group. We would also like to show our gratitude to Dr. Do who
+introduced us the interesting lectures on financial programming and modeling,
+and whose broad programming knowledge will have lasting effect.
+
+
+# Reference
+
+## Reference
+
+[quantopian]: https://www.quantopian.com
+[fig:meanVar]: figs/meanVariance.png
+[fig:globalMinVar]: figs/globalMinVar.png
+[fig:tangency]: figs/tangency.png
+[github]: https://github.com/wenjie2wang/math5800
+[Rmarkdown]: http://rmarkdown.rstudio.com/
