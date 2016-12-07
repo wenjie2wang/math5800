@@ -125,7 +125,7 @@ $$
 ## Tangency Portfolio
 
 - The tangency portfolio aims to maximize the ratio of excess return
-($\mathbf{r}^T\mathbf{w} - r_f$) to portfolio violatility and represents a
+($\mathbf{r}^T\mathbf{w} - r_f$) to portfolio volatility and represents a
 trade-off between return and risk.
 
 - The maximization problem can be written as:

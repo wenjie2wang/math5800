@@ -154,7 +154,7 @@ specified constant.
 ## Tangency Portfolio {#sec:tangency}
 
 The tangency portfolio aims to maximize the ratio of excess return
-($\mathbf{r}^T\mathbf{w} - r_f$) to portfolio violatility and represents a
+($\mathbf{r}^T\mathbf{w} - r_f$) to portfolio volatility and represents a
 trade-off between return and risk. The maximization problem is written as:
 $$
 \arg \max_{\mathbf{w}} \frac{\mathbf{r}^T\mathbf{w} - r_f}
@@ -165,7 +165,7 @@ where $r_f$ is risk-free rate.
 
 We may show that the maximization problem can be rewritten into a quadratic
 programming problem.  Let $\mathbf{w}_0$ denotes the weight vector of the
-tangency porfolio. Note that $\mathbf{r}^T \mathbf{w}_0 - r_f = \mathbf{r}^T
+tangency portfolio. Note that $\mathbf{r}^T \mathbf{w}_0 - r_f = \mathbf{r}^T
 \mathbf{w}_0 - r_f \mathbf{1}^T\mathbf{w}_0$ since
 $\mathbf{1}^T\mathbf{w}_0 = \mathbf{w}_0^T\mathbf{1} = 1$.  Then the maximum of the
 target function can be rewritten as
@@ -200,7 +200,7 @@ minimizing risk subject to a target expected return is defined as efficient
 portfolios. The efficient frontier consists of all efficient portfolios.
 
 
-Thus, the naive constructing method of effcient frontier is by obtaining the mean
+Thus, the naive constructing method of efficient frontier is by obtaining the mean
 variance portfolios subject to different target returns.  Alternatively, it
 can be shown that any minimum variance portfolio can be represented as a
 convex combination of any two minimum variance portfolios with different
