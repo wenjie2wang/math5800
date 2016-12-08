@@ -1,0 +1,342 @@
+---
+title: "Prediction on Fully Funded Loans from Lending Clubs"
+subtitle: "MATH 5800 --- Course Project"
+author: Wenjie Wang and Hao Li
+date: "`r format(Sys.time(), '%d %B %Y')`"
+header-includes:
+    - \usepackage{bm}
+    - \widowpenalties 1 150
+bibliography: project_group01.bib
+output:
+    beamer_presentation:
+        theme: "Singapore"
+        toc: true
+        fig_width: 7
+        fig_height: 4
+        fig_caption: true
+        slide_level: 2
+        keep_tex: false
+---
+
+
+```{r setup, echo = FALSE, warning = FALSE, message = FALSE}
+## function ipak: install and load multiple R packages.
+## check to see if packages are installed.
+## install them if they are not, then attach them to the search path.
+ipak <- function (pkg) {
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg))
+        install.packages(new.pkg, repos = "https://cloud.r-project.org")
+    sapply(pkg, require, character.only = TRUE, quietly = TRUE)
+    invisible(0L)
+}
+
+## install packages needed
+needpack <- c("knitr", "kfigr", "glmnet", "pROC", "ggplot2")
+ipak(needpack)
+
+## get output format
+outFormat <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+
+## source code
+source("R/functions.R")
+
+## load the results
+load("results/logis.RData")
+load("results/rocQ3.RData")
+load("results/rocQ1.RData")
+load("results/rocQ2.RData")
+
+## load the datasets
+load("cleanData/rawDat3.RData")
+load("cleanData/loanQ3.RData")
+
+## initial processing
+obj <- logis[[2L]]
+colVec <- gg_color_hue(3)
+
+## other temp results
+rocDat1 <- as.data.frame(rocQ1[1:4])
+rocDat2 <- as.data.frame(rocQ2[1:4])
+rocDat3 <- as.data.frame(rocQ3[1:4])
+aucQ1 <- as.numeric(rocQ1$auc)
+aucQ2 <- as.numeric(rocQ2$auc)
+aucQ3 <- as.numeric(rocQ3$auc)
+ciQ3 <- paste(paste0(round(as.numeric(rocQ3$ci)[- 2L], 2), "%"),
+              collapse = ", ")
+fprQ1 <- with(rocDat1,
+              100 - specificities[which(round(sensitivities, 2) == 90.00)[1]])
+fprQ2 <- with(rocDat2,
+              100 - specificities[which(round(sensitivities, 2) == 90.00)[1]])
+fprQ3 <- with(rocDat3,
+              100 - specificities[which(round(sensitivities, 2) == 90.00)[1]])
+
+## temp function to set up index for figures and tables
+noPrint <- function(lab) invisible(lab)
+
+## test
+fn = local({
+  i = 0
+  function(x) {
+      i <<- i + 1
+      if ("html" %in% outFormat) {
+          return(paste('Figure ', i, ': ', x, sep = ''))
+      }
+      as.character(x)
+  }
+})
+
+```
+
+`r noPrint(figr("fig:lambda", TRUE, FALSE, type = "Figure"))`
+`r noPrint(figr("fig:roc", TRUE, FALSE, type = "Figure"))`
+
+
+# Introduction
+
+## Background
+
+- Once a loan is approved, it is not always fully funded.
+- The loans being fully funded or not may depend on the characteristics of
+  the loans themselves and the applicants.
+- We can get over a hundred of characteristics for each loan from the lending
+  club website.
+- Taking the selected third quarter of 2016 data set as an example, there are
+  around 100,000 approved loan records and the fully funded rate is 97.09%.
+
+## Objective
+
+- The features of the data motivate us:
+    - use a regularized logistics regression model, which performs variable
+      selection and estimation at the same time.
+
+    - evaluate the prediction results using the receiver operating
+      characteristic (ROC) curve and the area under curve (AUC) metrics.
+
+- The objective of this project is to predict whether a loan would be fully
+  funded using the training data set and evaluate the prediction results
+  using the testing data sets.
+
+# Data Processing
+
+## Overview of Raw Data
+
+- We selected the approved loan records of the third quarter of 2016 as the
+  training data set and the first and second quarters of 2016 as the testing
+  data sets.
+
+- The raw data is available at the download section of the website
+  of [Lending Club][lendingClub] in format of `.csv`.
+
+- It contains totally `r ncol(rawDat3)` variables and `r nrow(rawDat3)`
+  approved loan records.
+
+## Generation of Response Variable
+
+- Look up the variable dictionary and create a binary response indicating
+  whether the loans were fully funded by comparing the amount committed
+  by investors and the amount of the loans applied.
+
+- The corresponding variables are named `funded_amnt_inv` and `loan_amnt`.
+
+- The fully funded percent is `r paste0(round(mean(loanQ3$y) * 100, 2),"%")`,
+  which is quite high compared with the not-fully funded percent. This means
+  that our training data is highly imbalanced, and it is impossible to use
+  ordinary models to fit the data or use accuracy to evaluate the prediction
+  results.
+
+
+## Transformation of Numeric Variables
+
+- Most of the numeric variables, such as `loan_amnt`, `installment`, etc.,
+  are non-negative due to their features.
+
+- We applied 0-1 scaling transformation to them.
+
+
+## Cleaning and Factorizing Text Variables
+
+- Some text variables are not able to provide much information and should be
+excluded from analysis.  For example, `desc` for loan description provided by
+the borrower is almost all missing; `url` for the lending club page with
+listing data is not accessible.
+
+- Other character variables, such as `grade` for loan grade assigned by the
+lending club does not have many levels. So they are taken as categorical
+variables.
+
+
+
+## Matching Job Title with Major Occupational Group
+
+- Predictor `emp_title`: Job titles supplied by the borrower when applying
+  for the loan.
+
+- After the basic cleaning routine, it had totally
+  `r length(unique(loanQ3$emp_title))` different levels.
+
+- An appropriate and concise occupational group for those job titles was
+  needed.
+
+- The Occupational Classification System (OCS)
+  provided by United States Department of Labor.
+
+- Totally nine well-defined Major Occupational Group (MOG) from OCS.  For
+  example, the [group A][mogA] is for professional and technical occupations.
+
+---
+
+- Term frequency and inverse document frequency (TF-IDF) is a popular
+  text-mining technique used to quantify what a document is about.
+
+- Term frequency (TF), how frequently a word occurs in a document measuring
+  how important the word may be.
+
+- Inverse document frequency (IDF) was designed to decrease the weight for
+  commonly used words and increases the weight for words that are not used
+  very much in a collection of documents. It can be combined with term
+  frequency to calculate a term's TF-IDF.
+
+---
+
+- For each MOG, we considered every job title as a document containing words
+  and computed TF-IDF score for each word in the original job title.
+
+- For every loan record, we defined the final score of its job title to be
+  the summation of the TF-IDF score of each word.
+
+- Further, we assigned each job title to the MOG with the maximum score among
+  the nine major occupational groups.
+
+- If there was no unique maximum score, we assigned the job title to group,
+  "others".
+
+
+# Regularized Logistics Model
+
+## Regularized Logistics Regression Model
+
+- After data processing, over hundreds of predictors were included.
+
+- The regularized model performs variable selection and estimation at
+  the same time. In addition, regularization often prevents models from
+  over-fitting and helps prediction.
+
+- The regularized logistics regression model was applied and the LASSO type
+  penalty proposed by @lasso was specified.
+
+- The Estimates from the fitted model revealed very interesting results.
+
+
+## Selection of Tuning Parameter
+
+- The tuning parameter was selected by ten-folds cross-validation to be the
+  largest value such that error was within 1 standard error of the minimum.
+
+- The binomial deviance of the fitted model under different tuning parameter
+  $\lambda$ was given in `r figr("fig:lambda", TRUE, FALSE, "Figure")`.
+
+---
+
+```{r fig:lambda, echo = FALSE, fig.width = 4.2, fig.height = 2.5, fig.cap = fn("Selection of tuning parameter."), fig.align = "center"}
+par(mar = c(2.5, 2.5, 0, 0), mgp = c(1.5, 0.5, 0)) # remove margin
+plot(obj)
+```
+
+# Prediction
+
+## Receiver Operating Characteristic (ROC) Curve
+
+- The Receiver operating characteristic (ROC) curve: A graphical tool of
+  illustrating the performance of a binary classifier system as its
+  discrimination threshold varies.
+
+- For the training set, loan records of Q3 in 2016:
+    - With TPR being at least 90%, the smallest FPR was only around
+      `r paste0(round(fprQ3, 2), "%")`.
+    - The area under the curve (AUC) is `r paste0(round(aucQ3, 2), "%")`.
+
+- For the test sets, loan records of Q1 and Q2 in 2016:
+    - With TPR being at least 90%, the smallest FPR was about
+      `r paste0(round(fprQ1, 2), "%")` and `r paste0(round(fprQ2, 2), "%")`,
+      respectively.
+    - The AUC was `r paste0(round(aucQ1, 2), "%")` and
+      `r paste0(round(aucQ2, 2), "%")`, respectively.
+
+---
+
+```{r fig:roc, echo = FALSE, fig.width = 4.5, fig.height = 2, fig.cap = fn("The ROC curve of prediction from regularized logistics model for different quarters."), fig.align = "center"}
+## Q1
+p1 <- ggplot(rocDat1, aes(x = (100 - specificities) / 100,
+                          y = sensitivities / 100)) +
+    geom_line(color = colVec[1]) +
+    geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "3313") +
+    geom_hline(yintercept = 0.9, color = colVec[2], linetype = 2) +
+    xlab("FPR") + ylab("TPR") + ggtitle("2016 Q1") + theme_bw() +
+    theme(axis.text = element_text(size = 6),
+          axis.title = element_text(size = 6),
+          plot.title = element_text(size = rel(1)))
+## Q2
+p2 <- ggplot(rocDat2, aes(x = (100 - specificities) / 100,
+                          y = sensitivities / 100)) +
+    geom_line(color = colVec[1]) +
+    geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "3313") +
+    geom_hline(yintercept = 0.9, color = colVec[2], linetype = 2) +
+    xlab("FPR") + ylab(NULL) + ggtitle("2016 Q2") + theme_bw() +
+    theme(axis.text = element_text(size = 6),
+          axis.title = element_text(size = 6),
+          plot.title = element_text(size = rel(1)))
+## Q3
+p3 <- ggplot(rocDat3, aes(x = (100 - specificities) / 100,
+                          y = sensitivities / 100)) +
+    geom_line(color = colVec[1]) +
+    geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "3313") +
+    geom_hline(yintercept = 0.9, color = colVec[2], linetype = 2) +
+    xlab("FPR") + ylab(NULL) + ggtitle("2016 Q3") + theme_bw() +
+    theme(axis.text = element_text(size = 6),
+          axis.title = element_text(size = 6),
+          plot.title = element_text(size = rel(1)))
+## combine output
+multiplot(p1, p2, p3, cols = 3)
+
+```
+
+# Summary
+
+## Summary
+
+- We applied the regularized logistics regression model to the
+  prediction problem of fully funded loans from lending clubs.
+
+- The fitted model revealed very interesting results on the effect of
+  predictors.
+
+- The prediction results were evaluated using the ROC curve and the AUC, which
+  suggested that the model did a fairly good job in prediction.
+
+- We believe that a good model should provide us with not only reasonably
+  good prediction but also inspiring interpretation of the variables of
+  interest.
+
+- The source document as well as all the **R** scripts are available at the
+  GitHub repository named [math5800][github] we set up for this course.
+
+# Acknowledgment
+
+## Acknowledgment
+
+The completion of the project would not be possible without the great effort
+from each team member. It gave us much pleasure working together as a
+group. We would also like to show our gratitude to Dr. Do who provided us
+with the interesting lectures on financial programming and modeling.
+
+
+# Reference
+
+## Reference
+
+[lendingClub]: https://www.lendingclub.com/info/download-data.action
+[mogA]: http://www.bls.gov/ncs/ocs/ocsm/comMoga.htm
+[glmnet]: https://CRAN.R-project.org/package=glmnet
+[github]: https://github.com/wenjie2wang/math5800
+[Rmarkdown]: http://rmarkdown.rstudio.com/
