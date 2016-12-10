@@ -2,7 +2,7 @@
 title: "Prediction on Fully Funded Loans from Lending Clubs"
 subtitle: "MATH 5800 --- Course Project"
 author: Wenjie Wang and Hao Li
-date: "`r format(Sys.time(), '%d %B %Y')`"
+date: "07 December 2016"
 abstract: |
     Once a loan is approved, it is not always fully funded.  There are times
     when loans are not backed by investors for the full amount of the
@@ -473,14 +473,14 @@ p2 <- ggplot(rocDat2, aes(x = (100 - specificities) / 100,
     geom_line(color = colVec[1]) +
     geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "3313") +
     geom_hline(yintercept = 0.9, color = colVec[2], linetype = 2) +
-    xlab("FPR") + ylab(NULL) + ggtitle("2016 Q2") + theme_bw()
+    xlab("FPR") + ylab("TPR") + ggtitle("2016 Q2") + theme_bw()
 ## Q3
 p3 <- ggplot(rocDat3, aes(x = (100 - specificities) / 100,
                           y = sensitivities / 100)) +
     geom_line(color = colVec[1]) +
     geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "3313") +
     geom_hline(yintercept = 0.9, color = colVec[2], linetype = 2) +
-    xlab("FPR") + ylab(NULL) + ggtitle("2016 Q3") + theme_bw()
+    xlab("FPR") + ylab("TPR") + ggtitle("2016 Q3") + theme_bw()
 ## combine output
 multiplot(p1, p2, p3, cols = 3)
 
