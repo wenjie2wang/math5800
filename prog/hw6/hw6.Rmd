@@ -1,0 +1,75 @@
+---
+title: "MATH 5800 Financial Programming/Modeling"
+subtitle: Homework 6
+author: Wenjie Wang, Hao Li, and Catherine Payzant
+date: "`r format(Sys.time(), '%d %B %Y')`"
+header-includes:
+    - \usepackage{bm}
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: no
+    number_sections: no
+    toc: no
+  fontsize: 11pt
+  classoption: letter
+  documentclass: article
+
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+## function ipak: install and load multiple R packages.
+## check to see if packages are installed.
+## install them if they are not, then attach them to the search path.
+## ipak <- function (pkg) {
+##     new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+##     if (length(new.pkg))
+##         install.packages(new.pkg, dependencies = TRUE)
+##     sapply(pkg, require, character.only = TRUE, quietly = TRUE)
+##     invisible(NULL)
+## }
+
+## ## install packages needed
+## needpack <- c("quadprog")
+## ipak(needpack)
+## knitr::opts_chunk$set(comment = ">")
+## load data and clean
+
+## source code
+
+```
+
+
+# Question 1
+
+The DEA constrained optimization problem that maximizes the efficiency of unit
+$d$, $d=1,\ldots,D$, $$ E_d = \frac{\sum_{j=1}^M u_{dj} O_{dj}}{\sum_{i=1}^N
+v_{di} I_{di}}, $$ can be rewritten into a linear programming problem that $$
+\min \sum_{i=1}^N v_{di} I_{di},$$ subject to $$ \sum_{j=1}^M u_{dj} O_{dj}=1,$$
+$$\sum_{j=1}^M u_{dj} O_{d'j} \le \sum_{i=1}^N v_{dj} I_{d'j},
+~d'=1,\ldots,D,$$ $$v_{di} \ge 0, i = 1,\ldots,M,~\text{and}~ u_{dj} \ge 0, j =
+1, \ldots, N.$$
+
+For unit $d$ ($d=1,\ldots,D$), let $\bm{x}_d = (u_{d1},\ldots,u_{dM},v_{d1},
+\ldots, v_{dN})^T$, $\bm{a}_d^T = (0, \ldots, 0, I_{d1}, \ldots, I_{dN})$,
+$\bm{b}_d^T = (O_{d1}, \ldots, O_{dM}, 0, \ldots, 0)$, $\bm{c}_d^T = (O_{d1},
+\ldots, O_{dM}, - I_{d1}, \ldots, - I_{dN})$.  Then the linear programming
+problem is much clearer in the following matrix notation, $$\min \bm{a}_d^T
+\bm{x}_d,$$ subject to $$ \bm{b}_d^T \bm{x}_d = 1,  \bm{C}^T \bm{x}_d \le
+\bm{0},~\text{and}~\bm{x}_d \ge \bm{0},$$ where $\bm{C} = (\bm{c}_1, \ldots,
+\bm{c}_D)$.
+
+
+# Question 2
+
+Using the same notation in Question 1, the original constrained optimization
+problem that maximizes the target function for unit $d$ can be rewritten as a
+linear programming problem that $$\max \bm{c}_d^T \bm{x}_d,$$ subject to $$
+\bm{a}_d^T \bm{x}_d = 1, \bm{C}^T \bm{x}_d \le \bm{0},~\text{and}~\bm{x}_d \ge
+\bm{0}.$$
+
+
+
+
+
+
