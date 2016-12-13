@@ -1,0 +1,56 @@
+
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### attach functions we wrote
+> source("fun.R")
+> 
+> ### sample inputs
+> S0 <- 60                                # initial stock price
+> K1 <- 55                                # smaller strike price
+> K2 <- 65                                # larger strike price
+> r <- 0.1                                # risk-free interest rateT
+> Time <- 2                               # expiration time
+> sigma <- 0.4                            # underlying volatility
+> M <- 4                                  # number of periods
+> 
+> ### Question 1. bull spread
+> ## call options
+> bullSpread(S0, K1, K2, r, Time, sigma, M, type = "calls")
+ long calls short calls        diff 
+  20.483396   16.154125    4.329272 
+> 
+> ## put options
+> bullSpread(S0, K1, K2, r, Time, sigma, M, type = "puts")
+ long puts short puts       diff 
+  5.513588   9.371624  -3.858036 
+> 
+> ### Question 2. bear spread
+> ## call options
+> bearSpread(S0, K1, K2, r, Time, sigma, M, type = "calls")
+ long calls short calls        diff 
+  16.154125   20.483396   -4.329272 
+> 
+> ## puts options
+> bearSpread(S0, K1, K2, r, Time, sigma, M, type = "puts")
+ long puts short puts       diff 
+  9.371624   5.513588   3.858036 
+> 
+> proc.time()
+   user  system elapsed 
+  0.132   0.009   0.134 
