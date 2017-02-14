@@ -88,6 +88,12 @@ def handle_data(context, data):
     current_price = data.current(context.security, "price")
     cash = context.portfolio.cash
 
+    # Cancel any open orders
+    # During the process, we found that the very high returns rate is abnormal
+    # The phenominal returns rate is induced by the failure of buying in stocks
+    for openOrder in get_open_orders():
+       for oneOrder in get_open_orders(openOrder):
+          cancel_order(oneOrder)
 
     # Note that record function only plot the last value before market closes
     # However, the stock trading happens every minute. So a simple local buy
